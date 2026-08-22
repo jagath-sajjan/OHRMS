@@ -139,6 +139,7 @@ export default function PayrollEditForm({ userId, employeeName }: Props) {
                     value={d.title}
                     onChange={e => updateDeduction(d.id, 'title', e.target.value)}
                     className="input text-xs flex-1"
+                    required
                   />
                   <input
                     type="number"
@@ -147,13 +148,14 @@ export default function PayrollEditForm({ userId, employeeName }: Props) {
                     value={d.amount || ''}
                     onChange={e => updateDeduction(d.id, 'amount', parseFloat(e.target.value) || 0)}
                     className="input text-xs w-20"
+                    required
                   />
                   <select
                     value={d.type}
                     onChange={e => updateDeduction(d.id, 'type', e.target.value as 'fixed' | 'percentage')}
                     className="input text-xs w-24"
                   >
-                    <option value="fixed">₹ Fixed</option>
+                    <option value="fixed">Fixed (₹)</option>
                     <option value="percentage">% of Basic</option>
                   </select>
                   {d.id !== 'pf' && d.id !== 'fines' && (
