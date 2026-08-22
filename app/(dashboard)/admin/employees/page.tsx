@@ -3,7 +3,8 @@ import { redirect } from 'next/navigation'
 import { db } from '@/db/client'
 import { users, profiles } from '@/db/schema'
 import { eq } from 'drizzle-orm'
-import { Users } from 'lucide-react'
+import { Users, ChevronRight } from 'lucide-react'
+import Link from 'next/link'
 
 export default async function AdminEmployeesPage() {
   const session = await auth()
@@ -39,16 +40,23 @@ export default async function AdminEmployeesPage() {
               <th className="text-left px-4 py-3 font-medium text-gray-600">Email</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Department</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Role</th>
+              <th className="px-4 py-3"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {employees.map(emp => (
               <tr key={emp.id} className="hover:bg-gray-50">
                 <td className="px-4 py-3 font-mono">{emp.employeeId}</td>
-                <td className="px-4 py-3">{emp.firstName && emp.lastName ? `${emp.firstName} ${emp.lastName}` : '-'}</td>
+                <td className="px-4 py-3">{emp.firstName && emp.lastName ? `${emp.firstName} ${emp.lastName}` : '—'}</td>
                 <td className="px-4 py-3 text-gray-500">{emp.email}</td>
-                <td className="px-4 py-3">{emp.department ?? '-'}</td>
+                <td className="px-4 py-3">{emp.department ?? '—'}</td>
                 <td className="px-4 py-3 capitalize">{emp.role}</td>
+                <td className="px-4 py-3">
+                  <Link href={`/admin/employees/${emp.id}`} className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-xs">
+                    Edit
+                    <ChevronRight size={12} />
+                  </Link>
+                </td>
               </tr>
             ))}
           </tbody>

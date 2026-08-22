@@ -2,7 +2,8 @@ import { auth } from '@/auth'
 import { db } from '@/db/client'
 import { profiles, users } from '@/db/schema'
 import { eq } from 'drizzle-orm'
-import { User, Briefcase, Mail, Phone, MapPin, Calendar } from 'lucide-react'
+import { User, Briefcase, Mail, Phone, MapPin, Calendar, Pencil } from 'lucide-react'
+import Link from 'next/link'
 
 export default async function ProfilePage() {
   const session = await auth()
@@ -13,15 +14,25 @@ export default async function ProfilePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <User size={20} />
-        <h1 className="text-2xl font-semibold">Profile</h1>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <User size={20} />
+          <h1 className="text-2xl font-semibold">Profile</h1>
+        </div>
+        <Link href="/profile/edit" className="btn-secondary w-auto">
+          <Pencil size={14} />
+          Edit
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="card flex flex-col items-center text-center">
           <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mb-3">
-            <User size={36} className="text-blue-600" />
+            {profile?.photoUrl ? (
+              <img src={profile.photoUrl} alt="profile" className="w-20 h-20 rounded-full object-cover" />
+            ) : (
+              <User size={36} className="text-blue-600" />
+            )}
           </div>
           <p className="font-semibold text-lg">
             {profile ? `${profile.firstName} ${profile.lastName}` : 'N/A'}
@@ -34,28 +45,28 @@ export default async function ProfilePage() {
           <h2 className="font-medium border-b pb-2">Personal Information</h2>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="flex items-center gap-2">
-              <Mail size={14} className="text-gray-400" />
+              <Mail size={14} className="text-gray-400 shrink-0" />
               <div>
                 <p className="text-gray-400">Email</p>
                 <p>{user?.email}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Phone size={14} className="text-gray-400" />
+              <Phone size={14} className="text-gray-400 shrink-0" />
               <div>
                 <p className="text-gray-400">Phone</p>
                 <p>{profile?.phone ?? 'Not set'}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <MapPin size={14} className="text-gray-400" />
+              <MapPin size={14} className="text-gray-400 shrink-0" />
               <div>
                 <p className="text-gray-400">Address</p>
                 <p>{profile?.address ?? 'Not set'}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Calendar size={14} className="text-gray-400" />
+              <Calendar size={14} className="text-gray-400 shrink-0" />
               <div>
                 <p className="text-gray-400">Date of Birth</p>
                 <p>{profile?.dateOfBirth ?? 'Not set'}</p>
@@ -66,21 +77,21 @@ export default async function ProfilePage() {
           <h2 className="font-medium border-b pb-2 mt-4">Job Information</h2>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="flex items-center gap-2">
-              <Briefcase size={14} className="text-gray-400" />
+              <Briefcase size={14} className="text-gray-400 shrink-0" />
               <div>
                 <p className="text-gray-400">Department</p>
                 <p>{profile?.department ?? 'Not set'}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Briefcase size={14} className="text-gray-400" />
+              <Briefcase size={14} className="text-gray-400 shrink-0" />
               <div>
                 <p className="text-gray-400">Designation</p>
                 <p>{profile?.designation ?? 'Not set'}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Calendar size={14} className="text-gray-400" />
+              <Calendar size={14} className="text-gray-400 shrink-0" />
               <div>
                 <p className="text-gray-400">Joining Date</p>
                 <p>{profile?.joiningDate ?? 'Not set'}</p>
