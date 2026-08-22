@@ -7,6 +7,9 @@ export const users = sqliteTable('users', {
   email: text('email').unique().notNull(),
   password: text('password').notNull(),
   role: text('role', { enum: ['employee', 'admin'] }).notNull().default('employee'),
+  isMainAdmin: integer('is_main_admin', { mode: 'boolean' }).default(false),
+  status: text('status', { enum: ['active', 'suspended'] }).notNull().default('active'),
+  warnings: integer('warnings').default(0),
   emailVerified: integer('email_verified', { mode: 'boolean' }).default(false),
   verificationToken: text('verification_token'),
   createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`)
@@ -53,9 +56,11 @@ export const payroll = sqliteTable('payroll', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   basicSalary: real('basic_salary').notNull().default(0),
+  hraPercentage: real('hra_percentage').default(24),
   hra: real('hra').default(0),
   allowances: real('allowances').default(0),
   deductions: real('deductions').default(0),
+  deductionsJson: text('deductions_json'),
   netSalary: real('net_salary').notNull().default(0),
   effectiveFrom: text('effective_from').notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`)
@@ -66,3 +71,10 @@ export type Profile = typeof profiles.$inferSelect
 export type Attendance = typeof attendance.$inferSelect
 export type Leave = typeof leaves.$inferSelect
 export type Payroll = typeof payroll.$inferSelect
+
+export type Deduction = {
+  id: string
+  title: string
+  amount: number
+  type: 'fixed' | 'percentage'
+}

@@ -3,8 +3,9 @@ import { redirect } from 'next/navigation'
 import { db } from '@/db/client'
 import { payroll, users, profiles } from '@/db/schema'
 import { eq, desc } from 'drizzle-orm'
-import { DollarSign } from 'lucide-react'
+import { DollarSign, FileText } from 'lucide-react'
 import PayrollEditForm from './payroll-edit-form'
+import Link from 'next/link'
 
 export default async function AdminPayrollPage() {
   const session = await auth()
@@ -44,7 +45,6 @@ export default async function AdminPayrollPage() {
               <th className="text-left px-4 py-3 font-medium text-gray-600">Employee</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Basic</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">HRA</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Allowances</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Deductions</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Net</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Effective</th>
@@ -62,13 +62,23 @@ export default async function AdminPayrollPage() {
                     <p className="text-xs text-gray-400 font-mono">{emp.employeeId}</p>
                   </td>
                   <td className="px-4 py-3">{p ? `₹${p.basicSalary.toLocaleString()}` : '—'}</td>
-                  <td className="px-4 py-3">{p ? `₹${(p.hra ?? 0).toLocaleString()}` : '—'}</td>
-                  <td className="px-4 py-3">{p ? `₹${(p.allowances ?? 0).toLocaleString()}` : '—'}</td>
+                  <td className="px-4 py-3">{p ? `₹${(p.hra ?? 0).toLocaleString()} (${p.hraPercentage ?? 24}%)` : '—'}</td>
                   <td className="px-4 py-3 text-red-600">{p ? `₹${(p.deductions ?? 0).toLocaleString()}` : '—'}</td>
                   <td className="px-4 py-3 font-semibold text-green-600">{p ? `₹${p.netSalary.toLocaleString()}` : '—'}</td>
                   <td className="px-4 py-3 text-gray-500">{p?.effectiveFrom ?? '—'}</td>
                   <td className="px-4 py-3">
-                    <PayrollEditForm userId={emp.id} employeeName={name ?? emp.employeeId} />
+                    <div className="flex items-center gap-3">
+                      <PayrollEditForm userId={emp.id} employeeName={name ?? emp.employeeId} />
+                      {p && (
+                        <Link
+                          href={`/admin/payroll/slip/${emp.id}`}
+                          className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700"
+                        >
+                          <FileText size={12} />
+                          Slip
+                        </Link>
+                      )}
+                    </div>
                   </td>
                 </tr>
               )

@@ -23,6 +23,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!user) return null
         if (!user.emailVerified) return null
+        if (user.status === 'suspended') return null
 
         const valid = await bcrypt.compare(credentials.password as string, user.password)
         if (!valid) return null
@@ -31,7 +32,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           id: user.id,
           email: user.email,
           role: user.role,
-          employeeId: user.employeeId
+          employeeId: user.employeeId,
+          isMainAdmin: user.isMainAdmin ?? false
         }
       }
     })
@@ -41,6 +43,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.role = (user as any).role
         token.employeeId = (user as any).employeeId
+        token.isMainAdmin = (user as any).isMainAdmin
       }
       return token
     },
@@ -49,6 +52,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.role = token.role as string
         session.user.employeeId = token.employeeId as string
         session.user.id = token.sub as string
+        session.user.isMainAdmin = token.isMainAdmin as boolean
       }
       return session
     }

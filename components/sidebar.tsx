@@ -3,14 +3,18 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
-import { LayoutDashboard, User, Clock, CalendarDays, DollarSign, Users, LogOut, Building2 } from 'lucide-react'
+import {
+  LayoutDashboard, User, Clock, CalendarDays,
+  DollarSign, Users, LogOut, Building2, BarChart2
+} from 'lucide-react'
 
 const employeeLinks = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/profile', label: 'Profile', icon: User },
   { href: '/attendance', label: 'Attendance', icon: Clock },
   { href: '/leaves', label: 'Leaves', icon: CalendarDays },
-  { href: '/payroll', label: 'Payroll', icon: DollarSign }
+  { href: '/payroll', label: 'Payroll', icon: DollarSign },
+  { href: '/analytics', label: 'Analytics', icon: BarChart2 }
 ]
 
 const adminLinks = [
@@ -18,7 +22,8 @@ const adminLinks = [
   { href: '/admin/employees', label: 'Employees', icon: Users },
   { href: '/admin/attendance', label: 'Attendance', icon: Clock },
   { href: '/admin/leaves', label: 'Leaves', icon: CalendarDays },
-  { href: '/admin/payroll', label: 'Payroll', icon: DollarSign }
+  { href: '/admin/payroll', label: 'Payroll', icon: DollarSign },
+  { href: '/analytics', label: 'Analytics', icon: BarChart2 }
 ]
 
 interface SidebarProps {
@@ -38,7 +43,7 @@ export default function Sidebar({ role }: SidebarProps) {
 
       <nav className="flex-1 p-3 space-y-1">
         {links.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href
+          const active = pathname === href || pathname.startsWith(href + '/')
           return (
             <Link
               key={href}
