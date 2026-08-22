@@ -2,29 +2,20 @@
 
 import { auth } from '@/auth'
 import { db } from '@/db/client'
-import { users, profiles } from '@/db/schema'
+import { users } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
-import { sendWarningEmail } from './email'
 
-export async function warnEmployee(targetUserId: string, message: string) {
+export async function warnEmployee(targetUserId: string, _message: string) {
   const session = await auth()
   if (!session || session.user.role !== 'admin') return { error: 'Unauthorized' }
 
   const user = await db.select().from(users).where(eq(users.id, targetUserId)).get()
-  const profile = await db.select().from(profiles).where(eq(profiles.userId, targetUserId)).get()
-
   if (!user) return { error: 'User not found' }
 
   await db.update(users)
     .set({ warnings: (user.warnings ?? 0) + 1 })
     .where(eq(users.id, targetUserId))
-
-  const name = profile ? `${profile.firstName} ${profile.lastName}` : user.email
-  try {
-    await sendWarningEmail(user.email, name, message)
-  } catch {
-  }
 
   revalidatePath(`/admin/employees/${targetUserId}`)
   return { success: true }

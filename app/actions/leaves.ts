@@ -1,10 +1,9 @@
 'use server'
 
 import { db } from '@/db/client'
-import { leaves, users, profiles } from '@/db/schema'
+import { leaves } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
-import { sendLeaveNotification } from './email'
 
 export async function applyLeave(formData: FormData) {
   const userId = formData.get('userId') as string
@@ -30,23 +29,9 @@ export async function applyLeave(formData: FormData) {
 }
 
 export async function updateLeaveStatus(leaveId: string, status: 'approved' | 'rejected', comment?: string) {
-  const leave = await db.select().from(leaves).where(eq(leaves.id, leaveId)).get()
-  if (!leave) return { error: 'Leave not found' }
-
   await db.update(leaves)
     .set({ status, adminComment: comment ?? null })
     .where(eq(leaves.id, leaveId))
-
-  const user = await db.select().from(users).where(eq(users.id, leave.userId)).get()
-  const profile = await db.select().from(profiles).where(eq(profiles.userId, leave.userId)).get()
-
-  if (user) {
-    const name = profile ? `${profile.firstName} ${profile.lastName}` : user.email
-    try {
-      await sendLeaveNotification(user.email, name, status, leave.type, comment)
-    } catch {
-    }
-  }
 
   revalidatePath('/admin/leaves')
   return { success: true }

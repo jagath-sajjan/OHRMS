@@ -1,9 +1,16 @@
 'use client'
 
 import { useState } from 'react'
+import { sendSignInLinkToEmail } from 'firebase/auth'
+import { firebaseAuth } from '@/lib/firebase'
 import { signUp } from '@/app/actions/auth'
 import Link from 'next/link'
-import { UserPlus, Loader2 } from 'lucide-react'
+import { UserPlus, Mail, Loader2 } from 'lucide-react'
+
+const actionCodeSettings = {
+  url: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+  handleCodeInApp: true
+}
 
 interface Props {
   adminExists: boolean
@@ -11,39 +18,41 @@ interface Props {
 
 export default function SignUpForm({ adminExists }: Props) {
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState(false)
-  const [verifyUrl, setVerifyUrl] = useState('')
+  const [sentTo, setSentTo] = useState('')
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setLoading(true)
     setError('')
+
     const formData = new FormData(e.currentTarget)
+    const email = formData.get('email') as string
+
     const result = await signUp(formData)
-    setLoading(false)
     if (result?.error) {
       setError(result.error)
-    } else {
-      if (result.verifyUrl) setVerifyUrl(result.verifyUrl)
-      setSuccess(true)
+      setLoading(false)
+      return
     }
+
+    try {
+      await sendSignInLinkToEmail(firebaseAuth, email, actionCodeSettings)
+      window.localStorage.setItem('emailForSignIn', email)
+      setSentTo(email)
+    } catch {
+      setError('Account created. Go to sign in to receive your link.')
+    }
+    setLoading(false)
   }
 
-  if (success) {
+  if (sentTo) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="card max-w-md w-full text-center">
-          <h2 className="text-xl font-semibold mb-2">Account created</h2>
-          <p className="text-gray-500 text-sm">A verification link has been sent to your email.</p>
-          {verifyUrl && (
-            <div className="mt-4 p-3 bg-blue-50 rounded-md text-left">
-              <p className="text-xs text-gray-500 mb-1">Or verify directly:</p>
-              <a href={verifyUrl} className="text-sm text-blue-600 hover:underline break-all">
-                Click here to verify your email
-              </a>
-            </div>
-          )}
+          <Mail size={32} className="mx-auto text-blue-600 mb-3" />
+          <h2 className="text-xl font-semibold">Account created</h2>
+          <p className="text-sm text-gray-500 mt-2">Sign-in link sent to <span className="font-medium">{sentTo}</span></p>
           <Link href="/sign-in" className="mt-4 inline-block text-sm text-blue-600 hover:underline">Back to sign in</Link>
         </div>
       </div>
@@ -77,13 +86,7 @@ export default function SignUpForm({ adminExists }: Props) {
 
           <div>
             <label className="label">Email</label>
-            <input name="email" type="email" className="input" required />
-          </div>
-
-          <div>
-            <label className="label">Password</label>
-            <input name="password" type="password" className="input" required />
-            <p className="text-xs text-gray-400 mt-1">Min 8 chars, one uppercase, one number</p>
+            <input name="email" type="email" className="input" required autoComplete="email" />
           </div>
 
           {!adminExists && (
@@ -93,13 +96,11 @@ export default function SignUpForm({ adminExists }: Props) {
                 <option value="employee">Employee</option>
                 <option value="admin">Admin</option>
               </select>
-              <p className="text-xs text-gray-400 mt-1">Admin option available only for first account</p>
+              <p className="text-xs text-gray-400 mt-1">Admin option available for first account only</p>
             </div>
           )}
 
-          {adminExists && (
-            <input type="hidden" name="role" value="employee" />
-          )}
+          {adminExists && <input type="hidden" name="role" value="employee" />}
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 

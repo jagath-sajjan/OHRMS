@@ -5,13 +5,10 @@ export const users = sqliteTable('users', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   employeeId: text('employee_id').unique().notNull(),
   email: text('email').unique().notNull(),
-  password: text('password').notNull(),
   role: text('role', { enum: ['employee', 'admin'] }).notNull().default('employee'),
   isMainAdmin: integer('is_main_admin', { mode: 'boolean' }).default(false),
   status: text('status', { enum: ['active', 'suspended'] }).notNull().default('active'),
   warnings: integer('warnings').default(0),
-  emailVerified: integer('email_verified', { mode: 'boolean' }).default(false),
-  verificationToken: text('verification_token'),
   createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`)
 })
 

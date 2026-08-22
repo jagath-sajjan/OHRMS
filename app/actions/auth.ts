@@ -3,16 +3,11 @@
 import { db } from '@/db/client'
 import { users, profiles } from '@/db/schema'
 import { eq } from 'drizzle-orm'
-import bcrypt from 'bcryptjs'
-import { Resend } from 'resend'
 import { z } from 'zod'
-
-const resend = new Resend(process.env.RESEND_API_KEY)
 
 const signUpSchema = z.object({
   employeeId: z.string().min(3),
   email: z.string().email(),
-  password: z.string().min(8).regex(/[A-Z]/, 'Must have uppercase letter').regex(/[0-9]/, 'Must have a number'),
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   role: z.enum(['employee', 'admin'])
@@ -27,7 +22,6 @@ export async function signUp(formData: FormData) {
   const raw = {
     employeeId: formData.get('employeeId') as string,
     email: formData.get('email') as string,
-    password: formData.get('password') as string,
     firstName: formData.get('firstName') as string,
     lastName: formData.get('lastName') as string,
     role: formData.get('role') as string
@@ -36,7 +30,7 @@ export async function signUp(formData: FormData) {
   const parsed = signUpSchema.safeParse(raw)
   if (!parsed.success) return { error: parsed.error.errors[0].message }
 
-  const { employeeId, email, password, firstName, lastName, role } = parsed.data
+  const { employeeId, email, firstName, lastName, role } = parsed.data
 
   const adminAlreadyExists = await checkAdminExists()
   if (role === 'admin' && adminAlreadyExists) return { error: 'Admin account already exists' }
@@ -47,17 +41,13 @@ export async function signUp(formData: FormData) {
   const existingId = await db.select().from(users).where(eq(users.employeeId, employeeId)).get()
   if (existingId) return { error: 'Employee ID already taken' }
 
-  const hashed = await bcrypt.hash(password, 10)
-  const token = crypto.randomUUID()
   const isFirstAdmin = role === 'admin' && !adminAlreadyExists
 
   const [user] = await db.insert(users).values({
     employeeId,
     email,
-    password: hashed,
     role: role as 'employee' | 'admin',
-    isMainAdmin: isFirstAdmin,
-    verificationToken: token
+    isMainAdmin: isFirstAdmin
   }).returning()
 
   await db.insert(profiles).values({
@@ -67,17 +57,5 @@ export async function signUp(formData: FormData) {
     joiningDate: new Date().toISOString().split('T')[0]
   })
 
-  const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${token}`
-
-  try {
-    await resend.emails.send({
-      from: 'OHRMS <onboarding@resend.dev>',
-      to: email,
-      subject: 'Verify your email — OHRMS',
-      html: `<p>Hi ${firstName},</p><p>Click <a href="${verifyUrl}">here</a> to verify your email and activate your account.</p><p>If you did not sign up, ignore this email.</p>`
-    })
-  } catch {
-  }
-
-  return { success: true, verifyUrl }
+  return { success: true }
 }

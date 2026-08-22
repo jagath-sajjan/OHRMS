@@ -6,7 +6,7 @@ export default auth((req) => {
   const isLoggedIn = !!req.auth
   const role = req.auth?.user?.role
 
-  const publicPaths = ['/sign-in', '/sign-up', '/verify-email']
+  const publicPaths = ['/sign-in', '/sign-up', '/auth/callback']
   const isPublic = publicPaths.some(p => pathname.startsWith(p))
 
   if (!isLoggedIn && !isPublic) {
