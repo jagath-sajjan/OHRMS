@@ -3,28 +3,33 @@
 import { useState, useTransition } from 'react'
 import { applyLeave } from '@/app/actions/leaves'
 import { Loader2, Plus, ChevronDown } from 'lucide-react'
+import { useToast } from '@/components/toast'
+import { desktopNotify } from '@/components/notification-init'
 
 interface Props {
   userId: string
 }
 
 export default function LeaveForm({ userId }: Props) {
+  const toast = useToast()
   const [open, setOpen] = useState(false)
-  const [error, setError] = useState('')
   const [isPending, startTransition] = useTransition()
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    const formData = new FormData(e.currentTarget)
+    const form = e.currentTarget
+    const formData = new FormData(form)
     formData.append('userId', userId)
     startTransition(async () => {
       const result = await applyLeave(formData)
       if (result?.error) {
-        setError(result.error)
+        toast(result.error, 'error')
+        desktopNotify('Leave request failed', result.error)
       } else {
+        toast('Leave request submitted successfully.', 'success')
+        desktopNotify('Leave request submitted ✅', 'Your leave request is pending admin review.')
         setOpen(false)
-        setError('')
-        ;(e.target as HTMLFormElement).reset()
+        form.reset()
       }
     })
   }
@@ -63,7 +68,6 @@ export default function LeaveForm({ userId }: Props) {
             <label className="label">Remarks</label>
             <textarea name="remarks" className="input" rows={2} />
           </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
           <button type="submit" className="btn-primary w-auto px-4" disabled={isPending}>
             {isPending ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
             Submit

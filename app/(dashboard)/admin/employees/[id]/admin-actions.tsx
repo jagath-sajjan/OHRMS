@@ -4,6 +4,8 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { warnEmployee, deleteEmployee, toggleSuspend, toggleAdminRole } from '@/app/actions/admin'
 import { AlertTriangle, Trash2, ShieldCheck, ShieldOff, Loader2, UserX, UserCheck } from 'lucide-react'
+import { useToast } from '@/components/toast'
+import { desktopNotify } from '@/components/notification-init'
 
 interface Props {
   targetUserId: string
@@ -12,6 +14,7 @@ interface Props {
   warnings: number
   isMainAdmin: boolean
   viewerIsMainAdmin: boolean
+  employeeName: string
 }
 
 export default function AdminActions({
@@ -20,14 +23,15 @@ export default function AdminActions({
   currentRole,
   warnings,
   isMainAdmin,
-  viewerIsMainAdmin
+  viewerIsMainAdmin,
+  employeeName
 }: Props) {
   const router = useRouter()
+  const toast = useToast()
   const [isPending, startTransition] = useTransition()
   const [warnMsg, setWarnMsg] = useState('')
   const [showWarn, setShowWarn] = useState(false)
   const [showDelete, setShowDelete] = useState(false)
-  const [error, setError] = useState('')
   const [status, setStatus] = useState(currentStatus)
   const [role, setRole] = useState(currentRole)
 
@@ -36,8 +40,10 @@ export default function AdminActions({
     startTransition(async () => {
       const result = await warnEmployee(targetUserId, warnMsg)
       if (result?.error) {
-        setError(result.error)
+        toast(result.error, 'error')
       } else {
+        toast(`Warning issued to ${employeeName}.`, 'warning')
+        desktopNotify('Warning issued ⚠️', `Warning sent to ${employeeName}.`)
         setShowWarn(false)
         setWarnMsg('')
         router.refresh()
@@ -49,9 +55,13 @@ export default function AdminActions({
     startTransition(async () => {
       const result = await toggleSuspend(targetUserId)
       if (result?.error) {
-        setError(result.error)
+        toast(result.error, 'error')
       } else {
-        setStatus(result.newStatus ?? (status === 'active' ? 'suspended' : 'active'))
+        const newStatus = result.newStatus ?? (status === 'active' ? 'suspended' : 'active')
+        setStatus(newStatus)
+        const label = newStatus === 'suspended' ? 'suspended' : 'reactivated'
+        toast(`${employeeName} has been ${label}.`, newStatus === 'suspended' ? 'warning' : 'success')
+        desktopNotify(`Employee ${label}`, `${employeeName} has been ${label}.`)
       }
     })
   }
@@ -60,9 +70,12 @@ export default function AdminActions({
     startTransition(async () => {
       const result = await toggleAdminRole(targetUserId)
       if (result?.error) {
-        setError(result.error)
+        toast(result.error, 'error')
       } else {
-        setRole(result.newRole ?? (role === 'admin' ? 'employee' : 'admin'))
+        const newRole = result.newRole ?? (role === 'admin' ? 'employee' : 'admin')
+        setRole(newRole)
+        toast(`${employeeName} is now ${newRole === 'admin' ? 'an admin' : 'an employee'}.`, 'info')
+        desktopNotify('Role updated 🔄', `${employeeName} role changed to ${newRole}.`)
       }
     })
   }
@@ -71,9 +84,11 @@ export default function AdminActions({
     startTransition(async () => {
       const result = await deleteEmployee(targetUserId)
       if (result?.error) {
-        setError(result.error)
+        toast(result.error, 'error')
         setShowDelete(false)
       } else {
+        toast(`${employeeName} deleted.`, 'info')
+        desktopNotify('Employee deleted 🗑️', `${employeeName} has been removed.`)
         router.push('/admin/employees')
       }
     })
@@ -82,8 +97,6 @@ export default function AdminActions({
   return (
     <div className="card space-y-4">
       <h2 className="font-medium">Admin Actions</h2>
-
-      {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="flex items-center gap-2 text-sm">
         <span className="text-gray-500">Status:</span>

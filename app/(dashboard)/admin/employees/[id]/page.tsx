@@ -36,6 +36,7 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
         warnings={user.warnings ?? 0}
         isMainAdmin={user.isMainAdmin ?? false}
         viewerIsMainAdmin={session.user.isMainAdmin}
+        employeeName={name}
       />
 
       <EmployeeEditForm profile={profile ?? null} userId={id} />

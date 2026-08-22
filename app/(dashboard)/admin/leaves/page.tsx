@@ -63,7 +63,7 @@ export default async function AdminLeavesPage() {
                   }`}>{l.status}</span>
                 </td>
                 <td className="px-4 py-3">
-                  {l.status === 'pending' && <LeaveActions leaveId={l.id} />}
+                  {l.status === 'pending' && <LeaveActions leaveId={l.id} employeeName={l.firstName && l.lastName ? `${l.firstName} ${l.lastName}` : (l.employeeId ?? 'Employee')} />}
                 </td>
               </tr>
             ))}

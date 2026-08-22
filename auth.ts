@@ -3,15 +3,17 @@ import Credentials from 'next-auth/providers/credentials'
 import { db } from '@/db/client'
 import { users } from '@/db/schema'
 import { eq } from 'drizzle-orm'
+import bcrypt from 'bcryptjs'
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     Credentials({
       credentials: {
-        email: { label: 'Email', type: 'email' }
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' }
       },
       async authorize(credentials) {
-        if (!credentials?.email) return null
+        if (!credentials?.email || !credentials?.password) return null
 
         const user = await db
           .select()
@@ -19,8 +21,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           .where(eq(users.email, credentials.email as string))
           .get()
 
-        if (!user) return null
+        if (!user || !user.password) return null
         if (user.status === 'suspended') return null
+
+        const valid = await bcrypt.compare(credentials.password as string, user.password)
+        if (!valid) return null
 
         return {
           id: user.id,

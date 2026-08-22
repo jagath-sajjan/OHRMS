@@ -1,62 +1,51 @@
 'use client'
 
 import { useState } from 'react'
-import { sendSignInLinkToEmail } from 'firebase/auth'
-import { firebaseAuth } from '@/lib/firebase'
+import { signIn } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { signUp } from '@/app/actions/auth'
 import Link from 'next/link'
-import { UserPlus, Mail, Loader2 } from 'lucide-react'
-
-const actionCodeSettings = {
-  url: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
-  handleCodeInApp: true
-}
+import { UserPlus, Loader2 } from 'lucide-react'
+import { useToast } from '@/components/toast'
+import { desktopNotify } from '@/components/notification-init'
 
 interface Props {
   adminExists: boolean
 }
 
 export default function SignUpForm({ adminExists }: Props) {
-  const [error, setError] = useState('')
-  const [sentTo, setSentTo] = useState('')
+  const router = useRouter()
+  const toast = useToast()
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setLoading(true)
-    setError('')
 
     const formData = new FormData(e.currentTarget)
     const email = formData.get('email') as string
+    const password = formData.get('password') as string
 
     const result = await signUp(formData)
     if (result?.error) {
-      setError(result.error)
+      toast(result.error, 'error')
       setLoading(false)
       return
     }
 
-    try {
-      await sendSignInLinkToEmail(firebaseAuth, email, actionCodeSettings)
-      window.localStorage.setItem('emailForSignIn', email)
-      setSentTo(email)
-    } catch {
-      setError('Account created. Go to sign in to receive your link.')
+    // Auto sign-in after account creation
+    const signInResult = await signIn('credentials', { email, password, redirect: false })
+    if (signInResult?.error) {
+      toast('Account created! Please sign in.', 'info')
+      desktopNotify('Account created', 'Please sign in to continue.')
+      setLoading(false)
+      router.push('/sign-in')
+    } else {
+      toast('Account created! Welcome aboard.', 'success')
+      desktopNotify('Welcome to OHRMS! 🎉', 'Your account has been created successfully.')
+      router.push('/dashboard')
+      router.refresh()
     }
-    setLoading(false)
-  }
-
-  if (sentTo) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="card max-w-md w-full text-center">
-          <Mail size={32} className="mx-auto text-blue-600 mb-3" />
-          <h2 className="text-xl font-semibold">Account created</h2>
-          <p className="text-sm text-gray-500 mt-2">Sign-in link sent to <span className="font-medium">{sentTo}</span></p>
-          <Link href="/sign-in" className="mt-4 inline-block text-sm text-blue-600 hover:underline">Back to sign in</Link>
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -89,6 +78,19 @@ export default function SignUpForm({ adminExists }: Props) {
             <input name="email" type="email" className="input" required autoComplete="email" />
           </div>
 
+          <div>
+            <label className="label">Password</label>
+            <input
+              name="password"
+              type="password"
+              className="input"
+              required
+              autoComplete="new-password"
+              minLength={8}
+              placeholder="Min. 8 characters"
+            />
+          </div>
+
           {!adminExists && (
             <div>
               <label className="label">Role</label>
@@ -101,8 +103,6 @@ export default function SignUpForm({ adminExists }: Props) {
           )}
 
           {adminExists && <input type="hidden" name="role" value="employee" />}
-
-          {error && <p className="text-sm text-red-600">{error}</p>}
 
           <button type="submit" className="btn-primary" disabled={loading}>
             {loading ? <Loader2 size={16} className="animate-spin" /> : <UserPlus size={16} />}
