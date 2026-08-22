@@ -69,12 +69,15 @@ export async function signUp(formData: FormData) {
 
   const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${token}`
 
-  await resend.emails.send({
-    from: 'OHRMS <onboarding@resend.dev>',
-    to: email,
-    subject: 'Verify your email — OHRMS',
-    html: `<p>Hi ${firstName},</p><p>Click <a href="${verifyUrl}">here</a> to verify your email and activate your account.</p><p>If you did not sign up, ignore this email.</p>`
-  })
+  try {
+    await resend.emails.send({
+      from: 'OHRMS <onboarding@resend.dev>',
+      to: email,
+      subject: 'Verify your email — OHRMS',
+      html: `<p>Hi ${firstName},</p><p>Click <a href="${verifyUrl}">here</a> to verify your email and activate your account.</p><p>If you did not sign up, ignore this email.</p>`
+    })
+  } catch {
+  }
 
   return { success: true, verifyUrl }
 }
