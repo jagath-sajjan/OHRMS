@@ -12,6 +12,7 @@ interface Props {
 export default function SignUpForm({ adminExists }: Props) {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [verifyUrl, setVerifyUrl] = useState('')
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -24,6 +25,7 @@ export default function SignUpForm({ adminExists }: Props) {
     if (result?.error) {
       setError(result.error)
     } else {
+      if (result.verifyUrl) setVerifyUrl(result.verifyUrl)
       setSuccess(true)
     }
   }
@@ -32,8 +34,16 @@ export default function SignUpForm({ adminExists }: Props) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="card max-w-md w-full text-center">
-          <h2 className="text-xl font-semibold mb-2">Check your email</h2>
-          <p className="text-gray-500 text-sm">A verification link has been sent to your email address.</p>
+          <h2 className="text-xl font-semibold mb-2">Account created</h2>
+          <p className="text-gray-500 text-sm">A verification link has been sent to your email.</p>
+          {verifyUrl && (
+            <div className="mt-4 p-3 bg-blue-50 rounded-md text-left">
+              <p className="text-xs text-gray-500 mb-1">Or verify directly:</p>
+              <a href={verifyUrl} className="text-sm text-blue-600 hover:underline break-all">
+                Click here to verify your email
+              </a>
+            </div>
+          )}
           <Link href="/sign-in" className="mt-4 inline-block text-sm text-blue-600 hover:underline">Back to sign in</Link>
         </div>
       </div>

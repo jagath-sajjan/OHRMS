@@ -76,5 +76,5 @@ export async function signUp(formData: FormData) {
     html: `<p>Hi ${firstName},</p><p>Click <a href="${verifyUrl}">here</a> to verify your email and activate your account.</p><p>If you did not sign up, ignore this email.</p>`
   })
 
-  return { success: true }
+  return { success: true, verifyUrl }
 }
