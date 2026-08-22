@@ -2,7 +2,7 @@
 
 import { db } from '@/db/client'
 import { users, profiles } from '@/db/schema'
-import { eq } from 'drizzle-orm'
+import { eq, desc } from 'drizzle-orm'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
 
@@ -18,6 +18,24 @@ const signUpSchema = z.object({
 export async function checkAdminExists(): Promise<boolean> {
   const admin = await db.select({ id: users.id }).from(users).where(eq(users.role, 'admin')).get()
   return !!admin
+}
+
+// Returns next employee ID like D001, D002...
+export async function getNextEmployeeId(): Promise<string> {
+  const allUsers = await db
+    .select({ employeeId: users.employeeId })
+    .from(users)
+    .orderBy(desc(users.createdAt))
+
+  let max = 0
+  for (const u of allUsers) {
+    const match = u.employeeId.match(/^D(\d+)$/i)
+    if (match) {
+      const num = parseInt(match[1], 10)
+      if (num > max) max = num
+    }
+  }
+  return `D${String(max + 1).padStart(3, '0')}`
 }
 
 export async function signUp(formData: FormData) {

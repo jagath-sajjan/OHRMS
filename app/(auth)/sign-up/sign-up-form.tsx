@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { signUp } from '@/app/actions/auth'
+import { signUp, getNextEmployeeId } from '@/app/actions/auth'
 import Link from 'next/link'
 import { UserPlus, Loader2 } from 'lucide-react'
 import { useToast } from '@/components/toast'
@@ -17,6 +17,15 @@ export default function SignUpForm({ adminExists }: Props) {
   const router = useRouter()
   const toast = useToast()
   const [loading, setLoading] = useState(false)
+  const [employeeId, setEmployeeId] = useState('')
+  const [loadingId, setLoadingId] = useState(true)
+
+  useEffect(() => {
+    getNextEmployeeId().then(id => {
+      setEmployeeId(id)
+      setLoadingId(false)
+    })
+  }, [])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -33,7 +42,6 @@ export default function SignUpForm({ adminExists }: Props) {
       return
     }
 
-    // Auto sign-in after account creation
     const signInResult = await signIn('credentials', { email, password, redirect: false })
     if (signInResult?.error) {
       toast('Account created! Please sign in.', 'info')
@@ -70,7 +78,15 @@ export default function SignUpForm({ adminExists }: Props) {
 
           <div>
             <label className="label">Employee ID</label>
-            <input name="employeeId" className="input" required />
+            <input
+              name="employeeId"
+              className="input font-mono"
+              required
+              value={loadingId ? '' : employeeId}
+              onChange={e => setEmployeeId(e.target.value)}
+              placeholder={loadingId ? 'Loading...' : ''}
+            />
+            <p className="text-xs text-gray-400 mt-1">Auto-generated, you can edit it</p>
           </div>
 
           <div>
@@ -104,7 +120,7 @@ export default function SignUpForm({ adminExists }: Props) {
 
           {adminExists && <input type="hidden" name="role" value="employee" />}
 
-          <button type="submit" className="btn-primary" disabled={loading}>
+          <button type="submit" className="btn-primary" disabled={loading || loadingId}>
             {loading ? <Loader2 size={16} className="animate-spin" /> : <UserPlus size={16} />}
             {loading ? 'Creating...' : 'Create account'}
           </button>

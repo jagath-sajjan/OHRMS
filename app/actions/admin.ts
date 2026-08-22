@@ -3,7 +3,7 @@
 import { auth } from '@/auth'
 import { db } from '@/db/client'
 import { users } from '@/db/schema'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 
 export async function warnEmployee(targetUserId: string, _message: string) {
@@ -14,7 +14,7 @@ export async function warnEmployee(targetUserId: string, _message: string) {
   if (!user) return { error: 'User not found' }
 
   await db.update(users)
-    .set({ warnings: (user.warnings ?? 0) + 1 })
+    .set({ warnings: (user.warnings ?? 0) + 1, updatedAt: sql`(unixepoch())` })
     .where(eq(users.id, targetUserId))
 
   revalidatePath(`/admin/employees/${targetUserId}`)
@@ -45,7 +45,9 @@ export async function toggleSuspend(targetUserId: string) {
   if (user.isMainAdmin) return { error: 'Cannot suspend the main admin' }
 
   const newStatus = user.status === 'active' ? 'suspended' : 'active'
-  await db.update(users).set({ status: newStatus }).where(eq(users.id, targetUserId))
+  await db.update(users)
+    .set({ status: newStatus, updatedAt: sql`(unixepoch())` })
+    .where(eq(users.id, targetUserId))
 
   revalidatePath(`/admin/employees/${targetUserId}`)
   revalidatePath('/admin/employees')
@@ -61,7 +63,9 @@ export async function toggleAdminRole(targetUserId: string) {
   if (!user) return { error: 'User not found' }
 
   const newRole = user.role === 'admin' ? 'employee' : 'admin'
-  await db.update(users).set({ role: newRole }).where(eq(users.id, targetUserId))
+  await db.update(users)
+    .set({ role: newRole, updatedAt: sql`(unixepoch())` })
+    .where(eq(users.id, targetUserId))
 
   revalidatePath(`/admin/employees/${targetUserId}`)
   revalidatePath('/admin/employees')

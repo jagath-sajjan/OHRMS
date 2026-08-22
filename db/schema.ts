@@ -10,6 +10,7 @@ export const users = sqliteTable('users', {
   isMainAdmin: integer('is_main_admin', { mode: 'boolean' }).default(false),
   status: text('status', { enum: ['active', 'suspended'] }).notNull().default('active'),
   warnings: integer('warnings').default(0),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`)
 })
 

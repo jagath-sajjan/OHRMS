@@ -32,18 +32,41 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           email: user.email,
           role: user.role,
           employeeId: user.employeeId,
-          isMainAdmin: user.isMainAdmin ?? false
+          isMainAdmin: user.isMainAdmin ?? false,
+          updatedAt: user.updatedAt?.getTime() ?? 0
         }
       }
     })
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
+      // On sign-in, store the snapshot
       if (user) {
         token.role = (user as any).role
         token.employeeId = (user as any).employeeId
         token.isMainAdmin = (user as any).isMainAdmin
+        token.updatedAt = (user as any).updatedAt
       }
+
+      // On every request after sign-in, re-validate against DB
+      if (trigger !== 'signIn' && token.sub) {
+        const dbUser = await db
+          .select()
+          .from(users)
+          .where(eq(users.id, token.sub))
+          .get()
+
+        // If suspended or deleted — kill session
+        if (!dbUser || dbUser.status === 'suspended') {
+          return null as any
+        }
+
+        // Sync latest role/isMainAdmin so UI updates immediately
+        token.role = dbUser.role
+        token.isMainAdmin = dbUser.isMainAdmin ?? false
+        token.updatedAt = dbUser.updatedAt?.getTime() ?? 0
+      }
+
       return token
     },
     async session({ session, token }) {
